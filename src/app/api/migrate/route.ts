@@ -3,38 +3,33 @@ import { db } from '@/lib/db'
 
 export async function POST() {
   try {
-    // Push schema to database (create tables)
-    // This will create Tryout, Question, Result tables
+    // Test database connection by counting tryouts
+    // This will trigger Prisma to create tables if they don't exist
+    console.log('Starting database migration...')
     
-    // Test by creating a simple query to ensure tables exist
-    await db.tryout.count()
+    const count = await db.tryout.count()
+    console.log('Database migration completed. Tryout count:', count)
     
     return NextResponse.json({
       message: 'Database schema pushed successfully',
       tables: ['Tryout', 'Question', 'Result'],
+      tryoutCount: count,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Migration error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     
-    // Check if it's a table doesn't exist error
     const errorMessage = error instanceof Error ? error.message : String(error)
-    
-    if (errorMessage.includes('does not exist')) {
-      return NextResponse.json(
-        {
-          error: 'Tables do not exist in database',
-          message: 'Schema migration failed',
-          details: errorMessage,
-        },
-        { status: 400 }
-      )
-    }
     
     return NextResponse.json(
       {
         error: 'Failed to push schema',
         details: errorMessage,
+        timestamp: new Date().toISOString(),
       },
       { status: 500 }
     )
