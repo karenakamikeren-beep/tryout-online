@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, PlayCircle, Database, CheckCircle, AlertCircle } from 'lucide-react'
+import { Clock, PlayCircle, Database, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Tryout {
@@ -23,6 +23,7 @@ export default function Home() {
   const [tryouts, setTryouts] = useState<Tryout[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
+  const [migrating, setMigrating] = useState(false)
 
   useEffect(() => {
     fetchTryouts()
@@ -67,6 +68,28 @@ export default function Home() {
     }
   }
 
+  const handleMigrate = async () => {
+    setMigrating(true)
+    try {
+      const response = await fetch('/api/migrate', {
+        method: 'POST',
+      })
+      if (response.ok) {
+        const data = await response.json()
+        toast.success(data.message || 'Database schema berhasil dibuat')
+        fetchTryouts()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Gagal membuat database schema')
+      }
+    } catch (error) {
+      console.error('Error migrating:', error)
+      toast.error('Gagal membuat database schema')
+    } finally {
+      setMigrating(false)
+    }
+  }
+
   const handleStartTryout = (tryoutId: string) => {
     window.location.href = `/tryouts/${tryoutId}`
   }
@@ -84,17 +107,49 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Seed Button */}
-        <div className="flex justify-center mb-8">
+        {/* Database Setup Buttons */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+          <Button
+            onClick={handleMigrate}
+            disabled={migrating || loading}
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-2"
+          >
+            <Database className="w-4 h-4" />
+            {migrating ? 'Sedang migrate...' : 'Buat Database Schema'}
+          </Button>
           <Button
             onClick={handleSeed}
-            disabled={seeding || loading}
+            disabled={seeding || loading || tryouts.length === 0}
             variant={tryouts.length > 0 ? 'outline' : 'default'}
             size="lg"
+            className="flex items-center justify-center gap-2"
           >
-            <Database className="w-4 h-4 mr-2" />
-            {seeding ? 'Sedang seeding...' : tryouts.length > 0 ? 'Refresh Data' : 'Mulai Populate Database'}
+            <Database className="w-4 h-4" />
+            {seeding ? . . . .
+            <RefreshCw className="w-4 h-4" />
+            {seeding ? . . .
+            <Database className="w-4 h-4" />
           </Button>
+        </div>
+
+        {/* Info Card */}
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
+            <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+              📋 Langkah Setup Database (WAJIB dilakukan urut):
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-blue-800 dark:text-blue-200">
+              <li><strong>Pastikan</strong> DATABASE_URL dan DIRECT_URL sudah diset di Vercel environment variables</li>
+              <li>Klik tombol <strong>"Buat Database Schema"</strong> untuk membuat tabel (Tryout, Question, Result)</li>
+              <li>Tunggu notifikasi sukses</li>
+              <li>Kemudian klik tombol <strong>"Populate Database"</strong> untuk mengisi data sample</li>
+            </ol>
+            <p className="mt-3 text-xs text-blue-600 dark:text-blue-300">
+              💡 DATABASE_URL harus dimulai dengan <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">prisma://</code>
+            </p>
+          </div>
         </div>
 
         {/* Tryouts List */}
@@ -104,14 +159,23 @@ export default function Home() {
             <p className="mt-4 text-slate-600 dark:text-slate-400">Memuat data...</p>
           </div>
         ) : tryouts.length === 0 ? (
-          <Card className="max-w-md mx-auto">
-            <CardContent className="py-12 text-center">
-              <AlertCircle className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-              <p className="text-slate-600 dark:text-slate-400">
-                Belum ada data tryout. Klik tombol di atas untuk memulai.
-              </p>
-            </CardContent>
-          </Card>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <Card>
+              <CardContent className="py-12 text-center">
+                <AlertCircle className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Database Belum Siap</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                  Tabel database belum ada. Silakan ikuti langkah di atas untuk setup database.
+                </p>
+                <ol className="text-left text-sm text-slate-600 dark:text-slate-400 space-y-2">
+                  <li>1. Setup DATABASE_URL di Vercel Environment Variables</li>
+                  <li>2. Klik tombol <strong>"Buat Database Schema"</strong></li>
+                  <li>3. Tunggu notifikasi sukses</li>
+                  <li>4. Kemudian klik tombol <strong>"Populate Database"</strong></li>
+                </ol>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {tryouts.map((tryout) => (
