@@ -1,251 +1,628 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Clock, PlayCircle, Database, CheckCircle, AlertCircle, RefreshCw, CirclePlus } from 'lucide-react'
-import { toast } from 'sonner'
-
-interface Tryout {
-  id: string
-  title: string
-  description: string | null
-  duration: number
-  passingScore: number
-  isActive: boolean
-  _count: {
-    questions: number
-  }
-}
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  GraduationCap,
+  Clock,
+  CheckCircle,
+  Award,
+  BookOpen,
+  Users,
+  Star,
+  Shield,
+  Zap,
+  TrendingUp,
+  ArrowRight,
+  Play,
+} from 'lucide-react'
 
 export default function Home() {
-  const [tryouts, setTryouts] = useState<Tryout[]>([])
-  const [loading, setLoading] = useState(true)
-  const [seeding, setSeeding] = useState(false)
-  const [migrating, setMigrating] = useState(false)
-
-  useEffect(() => {
-    fetchTryouts()
-  }, [])
-
-  const fetchTryouts = async () => {
-    try {
-      const response = await fetch('/api/tryouts')
-      if (response.ok) {
-        const data = await response.json()
-        setTryouts(data)
-      } else {
-        toast.error('Gagal memuat data tryout')
-      }
-    } catch (error) {
-      console.error('Error fetching tryouts:', error)
-      toast.error('Gagal memuat data tryout')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    try {
-      const response = await fetch('/api/seed', {
-        method: 'POST',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(data.message || 'Database berhasil di-seed')
-        fetchTryouts()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Gagal seeding database')
-      }
-    } catch (error) {
-      console.error('Error seeding:', error)
-      toast.error('Gagal seeding database')
-    } finally {
-      setSeeding(false)
-    }
-  }
-
-  const handleMigrate = async () => {
-    setMigrating(true)
-    try {
-      const response = await fetch('/api/migrate', {
-        method: 'POST',
-      })
-      if (response.ok) {
-        const data = await response.json()
-        toast.success(data.message || 'Database schema berhasil dibuat')
-        fetchTryouts()
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Gagal membuat database schema')
-      }
-    } catch (error) {
-      console.error('Error migrating:', error)
-      toast.error('Gagal membuat database schema')
-    } finally {
-      setMigrating(false)
-    }
-  }
-
-  const handleStartTryout = (tryoutId: string) => {
-    window.location.href = `/tryouts/${tryoutId}`
-  }
+  const [activeTab, setActiveTab] = useState<'tryout' | 'cpns' | 'utbk' | 'skb'>('tryout')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-            TryoutOnline
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Platform latihan tryout online dengan sistem penilaian otomatis
-          </p>
-        </div>
-
-        {/* Admin Link */}
-        <div className="flex justify-center mb-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.location.href = '/admin/quick-add'}
-          >
-            <CirclePlus className="w-4 h-4 mr-2" />
-            Admin Quick Add
-          </Button>
-        </div>
-
-        {/* Database Setup Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
-          <Button
-            onClick={handleMigrate}
-            disabled={migrating || loading}
-            variant="outline"
-            size="lg"
-            className="flex items-center justify-center gap-2"
-          >
-            <Database className="w-4 h-4" />
-            {migrating ? 'Sedang migrate...' : 'Buat Database Schema'}
-          </Button>
-          <Button
-            onClick={handleSeed}
-            disabled={seeding || loading || tryouts.length === 0}
-            variant={tryouts.length > 0 ? 'outline' : 'default'}
-            size="lg"
-            className="flex items-center justify-center gap-2"
-          >
-            {tryouts.length > 0 ? (
-              <Database className="w-4 h-4" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            {seeding ? 'Sedang seeding...' : tryouts.length > 0 ? 'Refresh Data' : 'Populate Database'}
-          </Button>
-        </div>
-
-        {/* Info Card */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
-            <p className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
-              📋 Langkah Setup Database (WAJIB dilakukan urut):
-            </p>
-            <ol className="list-decimal list-inside space-y-1 text-blue-800 dark:text-blue-200">
-              <li><strong>Pastikan</strong> DATABASE_URL dan DIRECT_URL sudah diset di Vercel environment variables</li>
-              <li>Klik tombol <strong>"Buat Database Schema"</strong> untuk membuat tabel (Tryout, Question, Result)</li>
-              <li>Tunggu notifikasi sukses</li>
-              <li>Kemudian klik tombol <strong>"Populate Database"</strong> untuk mengisi data sample</li>
-            </ol>
-            <p className="mt-3 text-xs text-blue-600 dark:text-blue-300">
-              💡 DATABASE_URL harus dimulai dengan <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">prisma://</code>
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        <div className="container mx-auto px-4 py-16 max-w-7xl">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-full text-sm font-semibold">
+                <Star className="w-4 h-4 fill-yellow-300" />
+                Platform #1 di Indonesia
+              </div>
+              <h1 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-slate-50 leading-tight">
+                TryoutOnline
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-300 mb-8 leading-relaxed">
+                Latihan Soal Ujian dengan Sistem CAT Asli
+                <br className="hidden md:block" />
+                Tingkatkan Peluang Lolos CPNS & UTBK Hingga 3x Lipat
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  size="lg"
+                  className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white text-lg px-8 h-14"
+                  onClick={() => window.location.href = '/tryouts'}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Mulai Latihan Gratis
+                </Button>
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <Users className="w-4 h-4" />
+                  <span>Ribuan user telah berhasil lolos ujian</span>
+                </div>
+              </div>
+              <div className="pt-6 space-y-4">
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <span>Tampilan & Sistem Pengerjaan CAT yang Sama dengan Aslinya</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                  <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                  <span>Analisis Hasil & Pembahasan Lengkap Otomatis</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                  <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <span>Bank Soal Ribuan yang Terupdate & Berkualitas</span>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:block relative">
+              <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+                <div className="absolute -top-4 -right-4 bg-white text-blue-600 dark:text-blue-500 px-4 py-2 rounded-full font-bold text-sm">
+                  GRATIS
+                </div>
+                <div className="text-4xl font-bold mb-6">15.000+</div>
+                <div className="text-xl mb-8">Soal Berkualitas</div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5" />
+                    <span>Tersedia untuk CPNS, UTBK, SKB</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-5 h-5" />
+                    <span>Timer Akurat & Anti-Soal</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5" />
+                    <span>Tingkatkan Nilai & Peringkat</span>
+                  </div>
+                </div>
+                <Button
+                  variant="secondary"
+                  className="w-full bg-white text-blue-600 hover:bg-blue-50 h-14 text-lg"
+                  onClick={() => window.location.href = '/tryouts'}
+                >
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  Lihat Semua Tryout
+                </Button>
+              </div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-purple-400 dark:bg-purple-600 rounded-full opacity-50 blur-2xl" />
+              <div className="absolute -top-8 -right-8 w-24 h-24 bg-blue-400 dark:bg-blue-600 rounded-full opacity-50 blur-xl" />
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* Tryouts List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 dark:border-slate-50"></div>
-            <p className="mt-4 text-slate-600 dark:text-slate-400">Memuat data...</p>
+      {/* Social Proof Section */}
+      <section className="py-16 bg-white dark:bg-slate-900">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              Apa Kata Peserta?
+            </h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300">
+              Ribuan pengguna telah berhasil lolos ujian berkat latihan di TryoutOnline
+            </p>
           </div>
-        ) : tryouts.length === 0 ? (
-          <div className="max-w-2xl mx-auto space-y-6">
-            <Card>
-              <CardContent className="py-12 text-center">
-                <AlertCircle className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-                <h3 className="text-xl font-bold mb-2">Database Belum Siap</h3>
-                <p className="text-slate-600 dark:text-slate-400 mb-4">
-                  Tabel database belum ada. Silakan ikuti langkah di atas untuk setup database.
-                </p>
-                <ol className="text-left text-sm text-slate-600 dark:text-slate-400 space-y-2">
-                  <li>1. Setup DATABASE_URL di Vercel Environment Variables</li>
-                  <li>2. Klik tombol <strong>"Buat Database Schema"</strong></li>
-                  <li>3. Tunggu notifikasi sukses</li>
-                  <li>4. Kemudian klik tombol <strong>"Populate Database"</strong></li>
-                </ol>
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="border-2 border-slate-200 dark:border-slate-700">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                    <GraduationCap className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                    A U D 1945
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-300 mb-4">
+                    "Analisis hasil yang detail sangat membantu saya untuk fokus pada topik yang masih lemah. Skor saya terus meningkat setiap tryout yang saya kerjakan di TryoutOnline."
+                  </p>
+                  <div className="flex items-center justify-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-400 dark:fill-yellow-500" />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-2 border-slate-200 dark:border-slate-700">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                    Andi Setiawan
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-300 mb-4">
+                    "Tampilan dan sistem pengerjaan yang sangat mirip dengan ujian CAT asli sangat membantu mengurangi rasa cemas saya saat ujian. Saya jadi lebih percaya diri dan siap."
+                  </p>
+                  <div className="flex items-center justify-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-400 dark:fill-yellow-500" />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-2 border-slate-200 dark:border-slate-700">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mb-4">
+                    <Award className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-2">
+                    Budi Raharjo
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-300 mb-4">
+                    "Platform yang sangat user-friendly dengan harga yang terjangkau. Soal-soalnya berkualitas dan sesuai dengan materi ujian yang sebenarnya."
+                  </p>
+                  <div className="flex items-center justify-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-400 dark:fill-yellow-500" />
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {tryouts.map((tryout) => (
-              <Card
-                key={tryout.id}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-2">
-                    <CardTitle className="text-xl">{tryout.title}</CardTitle>
-                    {tryout.isActive ? (
-                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Aktif
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Non-Aktif</Badge>
-                    )}
-                  </div>
-                  <CardDescription>{tryout.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                      <Clock className="w-4 h-4 mr-2" />
-                      <span>Durasi: {tryout.duration} menit</span>
-                    </div>
-                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                      <span>{tryout._count.questions} Soal</span>
-                    </div>
-                    <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      <span>Passing Score: {tryout.passingScore}%</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    onClick={() => handleStartTryout(tryout.id)}
-                    disabled={!tryout.isActive}
-                    className="w-full"
-                  >
-                    <PlayCircle className="w-4 h-4 mr-2" />
-                    Mulai Mengerjakan
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
+        </div>
+      </section>
 
-        {/* Footer */}
-        <footer className="mt-16 text-center text-sm text-slate-500 dark:text-slate-400">
-          <p>© 2024 TryoutOnline. All rights reserved.</p>
-        </footer>
-      </div>
+      {/* Features Section */}
+      <section className="py-20 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              Fitur Unggulan
+            </h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300">
+              Dapatkan pengalaman latihan ujian CAT yang realistis
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
+                  <Clock className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Timer Akurat
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Fitur hitung mundur otomatis yang akurat untuk melatih manajemen waktu Anda, persis seperti ujian CAT asli.
+                </p>
+              </div>
+            </div>
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-green-200 dark:group-hover:bg-green-800 transition-colors">
+                  <Zap className="w-7 h-7 text-green-600 dark:text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Anti-Soal
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Algoritma pengacakan soal cerdas untuk menghindari kecurangan dan menjamin kejujuran ujian.
+                </p>
+              </div>
+            </div>
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors">
+                  <Shield className="w-7 h-7 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Sertifikat Resmi
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Dapatkan sertifikat resmi sebagai bukti kelulusan tryout jika mencapai passing score.
+                </p>
+              </div>
+            </div>
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-yellow-200 dark:group-hover:bg-yellow-800 transition-colors">
+                  <TrendingUp className="w-7 h-7 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Peringkat Nasional
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Bandingkan skor Anda dengan ribuan peserta lain di seluruh Indonesia untuk melihat posisi.
+                </p>
+              </div>
+            </div>
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-red-100 dark:bg-red-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-red-200 dark:group-hover:bg-red-800 transition-colors">
+                  <BookOpen className="w-7 h-7 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Analisis Hasil
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Dapatkan skor detail, pembahasan, dan analisis performa per kategori soal untuk fokus pada kelemahan.
+                </p>
+              </div>
+            </div>
+            <div className="group">
+              <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+                <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900 rounded-xl flex items-center justify-center mb-6 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800 transition-colors">
+                  <Users className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50 mb-3">
+                  Simulasi CAT Asli
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Tampilan dan sistem pengerjaan yang sama persis dengan ujian CAT sebenarnya.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Categories & Tryouts Section */}
+      <section className="py-20 bg-white dark:bg-slate-800">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              Pilih Jenis Tryout
+            </h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300 mb-8">
+              Temukan tryout yang sesuai dengan kebutuhan persiapan ujian Anda
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-4 mb-12">
+            <button
+              onClick={() => setActiveTab('tryout')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                activeTab === 'tryout'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white shadow-lg'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              Semua Tryout
+            </button>
+            <button
+              onClick={() => setActiveTab('cpns')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                activeTab === 'cpns'
+                  ? 'bg-orange-600 dark:bg-orange-500 text-white shadow-lg'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              CPNS
+            </button>
+            <button
+              onClick={() => setActiveTab('utbk')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                activeTab === 'utbk'
+                  ? 'bg-green-600 dark:bg-green-500 text-white shadow-lg'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              UTBK
+            </button>
+            <button
+              onClick={() => setActiveTab('skb')}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                activeTab === 'skb'
+                  ? 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              SKB
+            </button>
+          </div>
+
+          {/* Tryout Cards - Sample */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Tryout 1 */}
+            <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                      <GraduationCap className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+                        Latihan CPNS Gratis
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Pelajari Lebih Lanjut
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">
+                      GRATIS
+                    </span>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                  Latihan Seleksi Kompetensi Dasar CPNS 2025 sesuai standar BKN dengan ribuan soal berkualitas.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Clock className="w-5 h-5" />
+                    <span>110 Soal</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <BookOpen className="w-5 h-5" />
+                    <span>100 Menit</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Users className="w-5 h-5" />
+                    <span>10K+ Peserta Aktif</span>
+                  </div>
+                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => window.location.href = '/tryouts'}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Mulai Latihan
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Tryout 2 */}
+            <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                      <Award className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+                        Tryout SKD CPNS 2025
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Premium
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                    <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                      POPULER
+                    </span>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                  Persiapan Ujian Tulis Berbasis Komputer Seleksi Nasional Bersama dengan tryout yang sesuai standar terbaru.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Clock className="w-5 h-5" />
+                    <span>180 Soal</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <BookOpen className="w-5 h-5" />
+                    <span>195 Menit</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Users className="w-5 h-5" />
+                    <span>50K+ Peserta Aktif</span>
+                  </div>
+                </div>
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
+                    <Star className="w-4 h-4 fill-yellow-400 dark:fill-yellow-500" />
+                    <span>4.8/5.0 Rating</span>
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-3">
+                    Rp 49.000
+                  </p>
+                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => window.location.href = '/tryouts'}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Mulai Tryout
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Tryout 3 */}
+            <Card className="border-2 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-all hover:shadow-xl">
+              <CardContent className="pt-8 pb-8">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-50">
+                        Tryout UTBK SNBT 2025
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        Premium
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-4 py-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                      LEBIH LENGKAP
+                    </span>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 mb-6">
+                  Persiapan Ujian Tulis Berbasis Komputer Seleksi Nasional Bersama dengan fitur modern dan analisis lengkap.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Clock className="w-5 h-5" />
+                    <span>180 Soal</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <BookOpen className="w-5 h-5" />
+                    <span>195 Menit</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+                    <Users className="w-5 h-5" />
+                    <span>75K+ Peserta Aktif</span>
+                  </div>
+                </div>
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 mb-2">
+                    <Star className="w-4 h-4 fill-yellow-400 dark:fill-yellow-500" />
+                    <span>4.9/5.0 Rating</span>
+                  </div>
+                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-50 mb-3">
+                    Rp 79.000
+                  </p>
+                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={() => window.location.href = '/tryouts'}
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Mulai Tryout
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 bg-gradient-to-b from-slate-100 to-white dark:from-slate-800 dark:to-slate-900">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-50 mb-4">
+              Kenapa Memilih Kami?
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+                50K+
+              </div>
+              <p className="text-slate-600 dark:text-slate-300">
+                Peserta Aktif
+              </p>
+            </div>
+            <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-8 h-8 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+                15,000+
+              </div>
+              <p className="text-slate-600 dark:text-slate-300">
+                Soal Berkualitas
+              </p>
+            </div>
+            <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
+                95%+
+              </div>
+              <p className="text-slate-600 dark:text-slate-300">
+                Tingkat Kelulusan
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-blue-600 dark:bg-blue-500">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            Siap Sukses Ujian Anda?
+          </h2>
+          <p className="text-xl text-blue-100 dark:text-blue-200 mb-8">
+            Bergabung dengan ribuan peserta yang telah berhasil lolos ujian berkat latihan rutin di TryoutOnline
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              className="bg-white text-blue-600 hover:bg-blue-50 h-14 text-lg px-8"
+              onClick={() => window.location.href = '/tryouts'}
+            >
+              <Play className="w-5 h-5 mr-2" />
+              Mulai Latihan Gratis
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 dark:bg-slate-950 text-white py-16">
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <h3 className="text-lg font-bold mb-4">Produk</h3>
+              <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Tryout CPNS</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Tryout UTBK</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Tryout SKB</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Paket Lengkap</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-4">Bantuan</h3>
+              <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
+                <li><a href="#" className="hover:text-blue-400 transition-colors">FAQ</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Panduan</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Kontak</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Syarat & Ketentuan</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-4">Perusahaan</h3>
+              <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Tentang Kami</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Karir</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-blue-400 transition-colors">Partner</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold mb-4">Hubungi Kami</h3>
+              <p className="text-sm text-slate-300 dark:text-slate-400 mb-2">
+                support@tryoutonline.com
+              </p>
+              <p className="text-sm text-slate-300 dark:text-slate-400">
+                WhatsApp: +62 812 3456
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-slate-700 dark:border-slate-800 pt-8 text-center">
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              © 2025 TryoutOnline. All rights reserved. Platform latihan ujian online terpercaya di Indonesia.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
