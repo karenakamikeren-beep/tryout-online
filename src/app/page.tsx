@@ -126,11 +126,12 @@ export default function Home() {
             size="lg"
             className="flex items-center justify-center gap-2"
           >
-            <Database className="w-4 h-4" />
-            {seeding ? . . . .
-            <RefreshCw className="w-4 h-4" />
-            {seeding ? . . .
-            <Database className="w-4 h-4" />
+            {tryouts.length > 0 ? (
+              <Database className="w-4 h-4" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            {seeding ? 'Sedang seeding...' : tryouts.length > 0 ? 'Refresh Data' : 'Populate Database'}
           </Button>
         </div>
 
