@@ -1,76 +1,86 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { auth } from '@/auth'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = await params
+    const session = await auth()
+    
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Anda harus login untuk menyimpan hasil' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
+    const { answers, timeTaken } = body
 
-    const { userId, userName, answers, timeTaken } = body
+    if (!answers || !timeTaken) {
+      return NextResponse.json(
+        { error: 'Jawaban dan waktu wajib diisi' },
+        { status: 400 }
+      )
+    }
 
-    // Get tryout with questions and correct answers
+    // Get tryout
     const tryout = await db.tryout.findUnique({
-      where: { id },
-      include: {
-        questions: {
-          select: {
-            id: true,
-            correctAnswer: true,
-          },
-        },
-      },
+      where: { id: params.id }
     })
 
     if (!tryout) {
-      return NextResponse.json({ error: 'Tryout not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Tryout tidak ditemukan' },
+        { status: 404 }
+      )
     }
 
     // Calculate score
-    let correctAnswers = 0
-    const answerDetails: Record<string, string> = {}
+    const questions = await db.question.findMany({
+      where: { tryoutId: params.id }
+    })
 
-    tryout.questions.forEach((question) => {
-      const userAnswer = answers[question.id]
-      answerDetails[question.id] = userAnswer || 'unanswered'
-      if (userAnswer === question.correctAnswer) {
+    let correctAnswers = 0
+    Object.entries(answers).forEach(([questionId, answer]) => {
+      const question = questions.find(q => q.id === questionId)
+      if (question && question.correctAnswer === answer) {
         correctAnswers++
       }
     })
 
-    const totalQuestions = tryout.questions.length
+    const totalQuestions = questions.length
     const score = (correctAnswers / totalQuestions) * 100
     const passed = score >= tryout.passingScore
 
-    // Save result
+    // Create result
     const result = await db.result.create({
       data: {
-        tryoutId: id,
-        userId,
-        userName,
-        score,
+        tryoutId: params.id,
+        userId: session.user.id,
+        userName: session.user.name || 'User',
+        score: parseFloat(score.toFixed(2)),
         totalQuestions,
         correctAnswers,
-        answers: JSON.stringify(answerDetails),
-        timeTaken,
+        answers: JSON.stringify(answers),
+        timeTaken: parseInt(String(timeTaken)),
         passed,
-      },
+      }
     })
 
     return NextResponse.json({
+      message: 'Hasil berhasil disimpan',
       resultId: result.id,
-      score,
-      correctAnswers,
-      totalQuestions,
-      passed,
-      passingScore: tryout.passingScore,
+      score: result.score,
+      passed: result.passed,
+      timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('Error submitting result:', error)
+    console.error('Error submitting:', error)
     return NextResponse.json(
-      { error: 'Failed to submit result' },
+      {
+        error: 'Gagal menyimpan hasil',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     )
   }
