@@ -1,73 +1,67 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
-export async function POST(request: Request) {
-  console.log('[POST /api/admin/tryouts] Received request')
-
+export async function GET() {
   try {
-    // Check content type
-    const contentType = request.headers.get('content-type')
-    console.log('[POST /api/admin/tryouts] Content-Type:', contentType)
+    const tryouts = await db.tryout.findMany({
+      include: {
+        category: true,
+        _count: {
+          select: { questions: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-    if (!contentType?.includes('application/json')) {
-      return NextResponse.json(
-        { error: 'Content-Type must be application/json' },
-        { status: 400 }
-      )
-    }
+    return NextResponse.json({
+      tryouts: tryouts.map(t => ({
+        ...t,
+        questionsCount: t._count.questions
+      })),
+      total: tryouts.length,
+    })
+  } catch (error) {
+    console.error('Error fetching tryouts:', error)
+    return NextResponse.json(
+      { error: 'Gagal memuat tryouts' },
+      { status: 500 }
+    )
+  }
+}
 
+export async function POST(request: Request) {
+  try {
     const body = await request.json()
-    console.log('[POST /api/admin/tryouts] Request body:', body)
-
-    const {
-      title,
-      description,
-      duration,
-      passingScore = 70,
-      isActive = true,
-    } = body
+    const { title, description, duration, passingScore, categoryId, isActive } = body
 
     if (!title || !duration) {
-      console.log('[POST /api/admin/tryouts] Validation failed: missing title or duration')
       return NextResponse.json(
-        { error: 'Title and duration are required' },
+        { error: 'Judul dan durasi wajib diisi' },
         { status: 400 }
       )
     }
-
-    console.log('[POST /api/admin/tryouts] Creating tryout...')
 
     const tryout = await db.tryout.create({
       data: {
         title,
         description: description || null,
         duration: parseInt(String(duration)),
-        passingScore: parseInt(String(passingScore)),
-        isActive,
-      },
+        passingScore: parseInt(String(passingScore || '70')),
+        categoryId: categoryId || null,
+        isActive: isActive !== undefined ? isActive : true,
+      }
     })
 
-    console.log('[POST /api/admin/tryouts] Tryout created:', tryout)
-
     return NextResponse.json({
-      message: 'Tryout created successfully',
-      tryout: {
-        id: tryout.id,
-        title: tryout.title,
-        description: tryout.description,
-        duration: tryout.duration,
-        passingScore: tryout.passingScore,
-        isActive: tryout.isActive,
-      },
+      message: 'Tryout berhasil dibuat',
+      tryout,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[POST /api/admin/tryouts] Error creating tryout:', error)
-    console.error('[POST /api/admin/tryouts] Error stack:', error instanceof Error ? error.stack : 'No stack')
-
+    console.error('Error creating tryout:', error)
     return NextResponse.json(
       {
-        error: 'Failed to create tryout',
+        error: 'Gagal membuat tryout',
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
@@ -75,27 +69,73 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  console.log('[GET /api/admin/tryouts] Listing all tryouts')
-
+export async function PATCH(request: Request) {
   try {
-    const tryouts = await db.tryout.findMany({
-      orderBy: { createdAt: 'desc' },
+    const body = await request.json()
+    const { id, title, description, duration, passingScore, categoryId, isActive } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID Tryout wajib diisi' },
+        { status: 400 }
+      )
+    }
+
+    const tryout = await db.tryout.update({
+      where: { id },
+      data: {
+        title: title !== undefined ? title : undefined,
+        description: description !== undefined ? description : undefined,
+        duration: duration !== undefined ? parseInt(String(duration)) : undefined,
+        passingScore: passingScore !== undefined ? parseInt(String(passingScore)) : undefined,
+        categoryId: categoryId !== undefined ? categoryId : undefined,
+        isActive: isActive !== undefined ? isActive : undefined,
+      }
     })
 
-    console.log('[GET /api/admin/tryouts] Found tryouts:', tryouts.length)
-
     return NextResponse.json({
-      tryouts,
-      count: tryouts.length,
+      message: 'Tryout berhasil diperbarui',
+      tryout,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
-    console.error('[GET /api/admin/tryouts] Error fetching tryouts:', error)
-
+    console.error('Error updating tryout:', error)
     return NextResponse.json(
       {
-        error: 'Failed to fetch tryouts',
+        error: 'Gagal memperbarui tryout',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID Tryout wajib diisi' },
+        { status: 400 }
+      )
+    }
+
+    await db.tryout.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({
+      message: 'Tryout berhasil dihapus',
+      id,
+      timestamp: new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error deleting tryout:', error)
+    return NextResponse.json(
+      {
+        error: 'Gagal menghapus tryout',
         details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
