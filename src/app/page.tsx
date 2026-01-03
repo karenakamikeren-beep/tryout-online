@@ -107,6 +107,18 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Admin Link */}
+        <div className="flex justify-center mb-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/admin/quick-add'}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Admin Quick Add
+          </Button>
+        </div>
+
         {/* Database Setup Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
           <Button
