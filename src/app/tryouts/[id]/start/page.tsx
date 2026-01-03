@@ -192,7 +192,7 @@ export default function TryoutStartPage() {
   const currentAnswer = answers[currentQuestion.id] || ''
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-slate-900">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -212,6 +212,19 @@ export default function TryoutStartPage() {
               <Clock className="w-4 h-4" />
               <span className="font-mono font-bold">{formatTime(timeLeft)}</span>
             </div>
+          </div>
+        </div>
+
+        {/* Ad Placeholder - Space untuk Iklan Google Adsense / Partner */}
+        <div className="mb-6">
+          <div className="bg-slate-100 dark:bg-slate-900 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-6 text-center transition-all duration-500 hover:shadow-md hover:shadow-slate-200 dark:hover:shadow-slate-800">
+            <Megaphone className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">
+              Space for Google Adsense / Partner
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Iklan akan muncul di sini secara smooth
+            </p>
           </div>
         </div>
 
