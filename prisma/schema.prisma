@@ -34,6 +34,17 @@ model Post {
   updatedAt DateTime @updatedAt
 }
 
+model Category {
+  id        String   @id @default(cuid())
+  name      String   // "SMA", "SMP", "UTBK", "CPNS", "SD"
+  slug      String   @unique // "sma", "smp", "utbk", "cpns", "sd"
+  icon      String?  // Icon name (emoji atau lucide-react)
+  color     String?  // Color untuk landing page (hex code)
+  tryouts   Tryout[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Tryout {
   id            String     @id @default(cuid())
   title         String
@@ -41,6 +52,8 @@ model Tryout {
   duration      Int        // in minutes
   passingScore  Int        @default(70) // minimum score to pass
   isActive      Boolean    @default(true)
+  categoryId    String?
+  category      Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   questions     Question[]
