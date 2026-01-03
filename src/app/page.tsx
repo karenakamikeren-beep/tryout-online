@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Clock, PlayCircle, Database, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
+import { Clock, PlayCircle, Database, CheckCircle, AlertCircle, RefreshCw, CirclePlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Tryout {
@@ -114,7 +114,7 @@ export default function Home() {
             size="sm"
             onClick={() => window.location.href = '/admin/quick-add'}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <CirclePlus className="w-4 h-4 mr-2" />
             Admin Quick Add
           </Button>
         </div>
